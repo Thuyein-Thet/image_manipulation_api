@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class ImageManipulation extends Model
 {
     use HasFactory;
+
+    const TYPE_RESIZE = 'resize';
+
+    const UPDATED_AT = flase;
+
+    protected $fillable = ['name', 'path', 'type', 'data', 'output_path', 'user_id', 'album_id'];
 }
