@@ -4,10 +4,12 @@ namespace App\Http\Controllers\V1;
 
 use File;
 use Image;
+use App\Models\Album;
 use Illuminate\Support\Str;
 use App\Models\ImageManipulation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ResizeImageRequest;
+use App\Http\Resources\V1\ImageManipulationResource;
 
 class ImageManipulationController extends Controller
 {
@@ -18,11 +20,16 @@ class ImageManipulationController extends Controller
      */
     public function index()
     {
-        //
+        return ImageManipulationResource::collection(ImageManipulation::paginate());
     }
 
-    public function byAlbum()
+    public function byAlbum(Album $album)
     {
+        $where = [
+            'album_id' => $album->id,
+        ];
+
+        return ImageManipulationResource::collection(ImageManipulation::where($where)->paginate());
 
     }
 
@@ -72,9 +79,16 @@ class ImageManipulationController extends Controller
         $w = $all['w'];
         $h = $all['h'] ?? false;
 
-        list($width, $height) = $this->getImageWidthAndHeight($w, $h, $originalPath);
+        list($width, $height ,$image) = $this->getImageWidthAndHeight($w, $h, $originalPath);
 
        $resizedFilename = $filename.'-resized.'.$extension;
+        
+       $image->resize($width, $height)->save($absolutePath.$resizedFilename);
+       $data['output_path']=$dir.$resizedFilename;
+
+       $imageManipulation = ImageManipulation::create($data);
+
+       return new ImageManipulationResource($imageManipulation);
     }
 
     /**
@@ -83,9 +97,9 @@ class ImageManipulationController extends Controller
      * @param  \App\Models\ImageManipulation  $imageManipulation
      * @return \Illuminate\Http\Response
      */
-    public function show(ImageManipulation $imageManipulation)
+    public function show(ImageManipulation $image)
     {
-        //
+        return new ImageManipulationResource($image);
     }
 
     /**
@@ -94,9 +108,10 @@ class ImageManipulationController extends Controller
      * @param  \App\Models\ImageManipulation  $imageManipulation
      * @return \Illuminate\Http\Response
      */
-    public function destroy(ImageManipulation $imageManipulation)
+    public function destroy(ImageManipulation $image)
     {
-        //
+        $image->delete();
+        return response('Delete Success', 204);
     }
 
     protected function getImageWidthAndHeight($w, $h, string $originalPath)
